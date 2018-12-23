@@ -39,29 +39,31 @@ func (host *Host) Run(cmd string) {
 		panic(err.Error())
 	}
 	defer session.Close()
+	fmt.Println(cmd)
 	var buff bytes.Buffer
 	session.Stdout = &buff
 	if err := session.Run(cmd); err != nil {
-		panic(err.Error())
+		panic(err)
 	}
 	fmt.Println(buff.String())
 }
 
-func (host *Host) Scp(sourcePath string,destPath string)  {
+func (host *Host) Scp(sourceFilePath string,destFilePath string)  {
 	session, err := host.Connection.NewSession()
 	if err != nil {
 		panic(err.Error())
 	}
 	defer session.Close()
 
-	destFile:= path.Base(destPath)
-	destDir := path.Dir(destPath)
+	destFile:= path.Base(destFilePath)
+	destDir := path.Dir(destFilePath)
 
 	go func() {
 		Buf := make([]byte, 1024)
 		w, _ := session.StdinPipe()
 		defer w.Close()
-		f, _ := os.Open(sourcePath)
+		f, _ := os.Open(sourceFilePath)
+		defer f.Close()
 		fileInfo, _ := f.Stat()
 		fmt.Fprintln(w, "C0644", fileInfo.Size(), destFile)
 		for {
@@ -80,5 +82,4 @@ func (host *Host) Scp(sourcePath string,destPath string)  {
 	if err := session.Run("/usr/bin/scp -qrt "+ destDir); err != nil {
 		fmt.Println(err)
 	}
-
 }
